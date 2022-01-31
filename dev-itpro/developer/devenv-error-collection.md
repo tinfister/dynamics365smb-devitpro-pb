@@ -73,10 +73,10 @@ pageextension 50100 CollectingErrorsExt extends "Customer List"
                 ApplicationArea = All;
                 trigger OnAction()
                 var
-                    i: Record Integer;
+                    Integer: Record Integer;
                 begin
-                    i.Number := -9;
-                    Codeunit.Run(Codeunit::DoPost, i);
+                    Integer.Number := -9;
+                    Codeunit.Run(Codeunit::DoPost, Integer);
                 end;
             }
 
@@ -109,10 +109,10 @@ pageextension 50100 CollectingErrorsExt extends "Customer List"
     [ErrorBehavior(ErrorBehavior::Collect)]
     procedure PostWithErrorCollect()
     var
-        i: Record Integer;
+        Integer: Record Integer;
     begin
-        i.Number := -9;
-        Codeunit.Run(Codeunit::DoPost, i);
+        Integer.Number := -9;
+        Codeunit.Run(Codeunit::DoPost, Integer);
         // After executing the codeunit, there will be collected errors,
         // and therefore an error dialog will be shown when exiting this procedure.
     end;
@@ -120,36 +120,36 @@ pageextension 50100 CollectingErrorsExt extends "Customer List"
     [ErrorBehavior(ErrorBehavior::Collect)]
     procedure PostWithErrorCollectCustomUI()
     var
-        errors: Record "Error Message" temporary;
-        error: ErrorInfo;
-        i: Record Integer;
+        TempErrorMessage: Record "Error Message" temporary;
+        Error: ErrorInfo;
+        Integer: Record Integer;
     begin
-        i.Number := -9;
+        Integer.Number := -9;
         // By using Codeunit.Run, you ensure any changes to the database within
         // Codeunit::DoPost are rolled back in case of errors.
-        if not Codeunit.Run(Codeunit::DoPost, i) then begin
+        if not Codeunit.Run(Codeunit::DoPost, Integer) then begin
             // If Codeunit.Run fails, a non-collectible error was encountered,
             // add this to the list of errors.
-            errors.ID := errors.ID + 1;
-            errors.Description := GetLastErrorText();
-            errors.Insert();
+            TempErrorMessage.ID := TempErrorMessage.ID + 1;
+            TempErrorMessage.Description := CopyStr(Error.Message, 1, MaxStrLen(TempErrorMessage.Description));
+            TempErrorMessage.Insert();
         end;
 
         // If there are collected errors, iterate through each of them and
         // add them to "Error Message" record.
-        if HasCollectedErrors then
-            foreach error in system.GetCollectedErrors() do begin
-                errors.ID := errors.ID + 1;
-                errors.Description := error.Message;
-                errors.Validate("Record ID", error.RecordId);
-                errors.Insert();
+        if HasCollectedErrors() then
+            foreach Error in System.GetCollectedErrors() do begin
+                TempErrorMessage.ID := TempErrorMessage.ID + 1;
+                TempErrorMessage.Description := Error.Message;
+                TempErrorMessage.Validate("Record ID", Error.RecordId);
+                TempErrorMessage.Insert();
             end;
 
         // Clearing the collected errors will ensure the built-in error dialog
         // will not show, but instead show our own custom "Error Messages" page.
         ClearCollectedErrors();
 
-        page.RunModal(page::"Error Messages", errors);
+        Page.RunModal(page::"Error Messages", TempErrorMessage);
     end;
 }
 
